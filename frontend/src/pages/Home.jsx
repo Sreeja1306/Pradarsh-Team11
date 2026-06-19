@@ -6,12 +6,10 @@ import Stats from '../components/home/Stats'
 import FAQ from '../components/home/FAQ'
 import HomeFAQ from '../components/home/HomeFAQ'
 import FeaturedProjects from '../components/home/FeaturedProjects'
-import IntroAnimation from '../components/common/IntroAnimation'
 
 export default function Home() {
   return (
-    <IntroAnimation>
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
         <Navbar />
 
         <main className="flex-1">
@@ -65,6 +63,5 @@ export default function Home() {
 
         <Footer />
       </div>
-    </IntroAnimation>
   )
 }

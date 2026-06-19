@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'How does the Explore page and filtering work?',
-    a: 'The Explore page lists all published projects. You can filter by category using the horizontal chip bar at the top, or by technology using the sidebar on the left — just click any tech to toggle it on or off. Multiple technologies use OR logic, so selecting React + Python shows projects using either one. You can also use the search bar to find projects by title, description, or developer name.',
+    a: 'The Explore page lists all published projects. You can filter by category using the horizontal chip bar at the top, or by technology using the sidebar on the left — just click any tech to toggle it on or off. Multiple technologies use AND logic, so selecting React + Python shows only projects that use both. You can also use the search bar to find projects by title or developer name.',
   },
   {
     q: 'What is the "Other" filter for technologies and categories?',

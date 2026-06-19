@@ -2,22 +2,39 @@ import { Link } from 'react-router-dom'
 import {
   Globe, Smartphone, Brain, Sparkles, Layers,
   User, GitBranch, Shield, Cloud, Wrench,
+  BookOpen, DollarSign, Heart, Film, ShoppingCart,
+  Users, Zap, Gamepad2,
 } from 'lucide-react'
+import { CATEGORIES } from '../../utils/constants'
 
-const CATEGORIES = [
-  { name: 'Web Development',       slug: 'web-development',       icon: Globe },
-  { name: 'Mobile Apps',           slug: 'mobile-apps',           icon: Smartphone },
-  { name: 'AI & Machine Learning', slug: 'ai-machine-learning',   icon: Brain },
-  { name: 'Generative AI',         slug: 'generative-ai',         icon: Sparkles },
-  { name: 'SaaS Products',         slug: 'saas-products',         icon: Layers },
-  { name: 'Portfolio',             slug: 'portfolio',             icon: User },
-  { name: 'Open Source',           slug: 'open-source',           icon: GitBranch },
-  { name: 'Cyber Security',        slug: 'cyber-security',        icon: Shield },
-  { name: 'Cloud Computing',       slug: 'cloud-computing',       icon: Cloud },
-  { name: 'Dev Tools',             slug: 'dev-tools',             icon: Wrench },
-]
+// Map every category name to a lucide icon
+const ICON_MAP = {
+  'Web Development':       Globe,
+  'Mobile Apps':           Smartphone,
+  'AI & Machine Learning': Brain,
+  'Generative AI':         Sparkles,
+  'SaaS Products':         Layers,
+  'Portfolio':             User,
+  'Open Source':           GitBranch,
+  'Cyber Security':        Shield,
+  'Cloud Computing':       Cloud,
+  'Dev Tools':             Wrench,
+  'Education':             BookOpen,
+  'Finance':               DollarSign,
+  'Healthcare':            Heart,
+  'Entertainment':         Film,
+  'E-Commerce':            ShoppingCart,
+  'Social':                Users,
+  'Productivity':          Zap,
+  'Gaming':                Gamepad2,
+}
 
-function CategoryCard({ name, slug, icon: Icon }) {
+// slug: lowercase, spaces→hyphens
+const toSlug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
+function CategoryCard({ name }) {
+  const Icon = ICON_MAP[name] || Wrench
+  const slug = toSlug(name)
   return (
     <Link
       to={`/explore?category=${encodeURIComponent(name)}`}
@@ -46,10 +63,10 @@ export default function FAQ() {
           <p className="text-gray-500 text-base">Find projects across every domain.</p>
         </div>
 
-        {/* Grid */}
+        {/* Grid — renders all categories from the single source of truth */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {CATEGORIES.map((cat) => (
-            <CategoryCard key={cat.slug} {...cat} />
+          {CATEGORIES.map((name) => (
+            <CategoryCard key={name} name={name} />
           ))}
         </div>
       </div>

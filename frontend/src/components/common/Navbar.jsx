@@ -87,16 +87,18 @@ export default function Navbar() {
                         <LayoutDashboard className="w-4 h-4 text-primary-500" />
                         Dashboard
                       </Link>
-                      {profile?.username && (
-                        <Link
-                          to={`/developer/${profile.username}`}
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          <User className="w-4 h-4 text-primary-500" />
-                          My Profile
-                        </Link>
-                      )}
+                      {/* My Profile — always visible for logged-in users */}
+                      <Link
+                        to={profile?.username
+                          ? `/developer/${profile.username}`
+                          : `/developer/${user?.id}`
+                        }
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <User className="w-4 h-4 text-primary-500" />
+                        My Profile
+                      </Link>
                       <div className="border-t border-gray-100 my-1" />
                       <button
                         onClick={handleSignOut}
@@ -153,6 +155,16 @@ export default function Navbar() {
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50"
                 >
                   <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <Link
+                  to={profile?.username
+                    ? `/developer/${profile.username}`
+                    : `/developer/${user?.id}`
+                  }
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  <User className="w-4 h-4" /> My Profile
                 </Link>
                 <button
                   onClick={handleSignOut}

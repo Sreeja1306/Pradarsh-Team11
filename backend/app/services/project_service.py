@@ -31,22 +31,18 @@ class ProjectService:
         try:
             response = (
                 supabase.table("projects")
-                .select("*, profiles(id, full_name, username, avatar_url, github_url, linkedin_url, website_url, bio)")
+                .select("*, profiles(id, full_name, username, avatar_url, bio)")
                 .eq("id", project_id)
                 .single()
                 .execute()
             )
             if response.data:
                 project = response.data
-                # Flatten author info
                 profile = project.pop("profiles", {}) or {}
-                project["author_name"] = profile.get("full_name", "")
+                project["author_name"]     = profile.get("full_name", "")
                 project["author_username"] = profile.get("username", "")
-                project["author_avatar"] = profile.get("avatar_url", "")
-                project["author_github"] = profile.get("github_url", "")
-                project["author_linkedin"] = profile.get("linkedin_url", "")
-                project["author_website"] = profile.get("website_url", "")
-                project["author_bio"] = profile.get("bio", "")
+                project["author_avatar"]   = profile.get("avatar_url", "")
+                project["author_bio"]      = profile.get("bio", "")
                 return project
             return None
         except Exception:
@@ -88,43 +84,74 @@ class ProjectService:
             raise HTTPException(status_code=500, detail=str(e))
 
     def get_my_projects(self, user_id: str) -> List[dict]:
-        """Fetch all projects (any status) belonging to user_id."""
+        """Fetch all projects (any status) belonging to user_id, with author info joined."""
         try:
             response = (
                 supabase.table("projects")
-                .select("*")
+                .select("*, profiles(full_name, username, avatar_url)")
                 .eq("user_id", user_id)
                 .order("created_at", desc=True)
                 .execute()
             )
-            return response.data or []
+            projects = []
+            for p in (response.data or []):
+                profile = p.pop("profiles", {}) or {}
+                p["author_name"]     = profile.get("full_name", "")
+                p["author_username"] = profile.get("username", "")
+                p["author_avatar"]   = profile.get("avatar_url", "")
+                projects.append(p)
+            return projects
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
     def get_projects_by_username(self, username: str) -> List[dict]:
-        """Fetch published projects for a developer identified by username."""
-        try:
-            # Get profile id from username
-            profile_resp = (
-                supabase.table("profiles")
-                .select("id")
-                .eq("username", username)
-                .single()
-                .execute()
-            )
-            if not profile_resp.data:
-                return []
+        """
+        Fetch published projects for a developer.
+        Accepts either a username string or a raw UUID.
+        When a UUID is passed (from the frontend using profile.id), the
+        username lookup is skipped entirely — this is the fast, reliable path.
+        """
+        import re
+        UUID_RE = re.compile(
+            r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            re.IGNORECASE
+        )
 
-            user_id = profile_resp.data["id"]
+        try:
+            if UUID_RE.match(username):
+                # Direct UUID — skip profile lookup entirely
+                user_id = username
+            else:
+                # Username string — resolve to UUID
+                profile_resp = (
+                    supabase.table("profiles")
+                    .select("id")
+                    .eq("username", username)
+                    .execute()
+                )
+                rows = profile_resp.data or []
+                if not rows:
+                    return []
+                user_id = rows[0]["id"]
+
             response = (
                 supabase.table("projects")
-                .select("*")
+                .select("*, profiles(full_name, username, avatar_url)")
                 .eq("user_id", user_id)
                 .eq("status", "published")
                 .order("created_at", desc=True)
                 .execute()
             )
-            return response.data or []
+
+            projects = []
+            for p in (response.data or []):
+                profile = p.pop("profiles", {}) or {}
+                p["author_name"]     = profile.get("full_name", "")
+                p["author_username"] = profile.get("username", "")
+                p["author_avatar"]   = profile.get("avatar_url", "")
+                projects.append(p)
+
+            return projects
         except Exception:
             return []
 

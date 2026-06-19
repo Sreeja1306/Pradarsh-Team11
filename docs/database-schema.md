@@ -22,9 +22,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name     TEXT,
   avatar_url    TEXT,
   bio           TEXT,
-  github_url    TEXT,
-  linkedin_url  TEXT,
-  website_url   TEXT,
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
@@ -72,7 +69,6 @@ CREATE TABLE IF NOT EXISTS public.projects (
   description   TEXT NOT NULL,
   category      TEXT NOT NULL,
   technologies  TEXT[] DEFAULT '{}',
-  github_url    TEXT,
   demo_url      TEXT,
   thumbnail_url TEXT,
   screenshots   TEXT[] DEFAULT '{}',
@@ -270,8 +266,7 @@ SELECT
   p.*,
   pr.full_name   AS author_name,
   pr.avatar_url  AS author_avatar,
-  pr.username    AS author_username,
-  pr.github_url  AS author_github
+  pr.username    AS author_username
 FROM public.projects p
 LEFT JOIN public.profiles pr ON p.user_id = pr.id
 WHERE p.status = 'published';

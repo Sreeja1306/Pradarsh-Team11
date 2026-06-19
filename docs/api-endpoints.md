@@ -29,10 +29,7 @@ All protected routes require `Authorization: Bearer <supabase_jwt>` header.
   "username": "string",
   "full_name": "string",
   "avatar_url": "string",
-  "bio": "string",
-  "github_url": "string",
-  "linkedin_url": "string",
-  "website_url": "string"
+  "bio": "string"
 }
 ```
 
@@ -62,7 +59,6 @@ All protected routes require `Authorization: Bearer <supabase_jwt>` header.
   "description": "string (required)",
   "category": "string (required)",
   "technologies": ["string"],
-  "github_url": "string",
   "demo_url": "string",
   "thumbnail_url": "string",
   "screenshots": ["string"],

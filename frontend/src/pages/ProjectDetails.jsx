@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import {
-  ArrowLeft, Github, ExternalLink, Eye, Calendar,
+  ArrowLeft, ExternalLink, Eye, Calendar,
   Tag, ChevronLeft, ChevronRight
-} from 'lucide-react'
-import Navbar from '../components/common/Navbar'
+} from 'lucide-react'import Navbar from '../components/common/Navbar'
 import Footer from '../components/common/Footer'
 import Loader from '../components/common/Loader'
 import projectService from '../services/projectService'
@@ -13,7 +12,6 @@ import { formatDate, getAvatarInitials, stringToColor } from '../utils/helpers'
 
 export default function ProjectDetails() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const { user } = useAuth()
 
   const [project, setProject] = useState(null)
@@ -67,12 +65,11 @@ export default function ProjectDetails() {
     demo_url, thumbnail_url, screenshots = [],
     view_count, created_at,
     author_name, author_username, author_avatar,
-    author_bio, author_github, author_linkedin, author_website,
+    author_bio,
     user_id,
   } = project
 
   const isOwner = user && user.id === user_id
-  const allImages = [thumbnail_url, ...screenshots].filter(Boolean)
   const initials = getAvatarInitials(author_name)
   const avatarGradient = stringToColor(author_name)
 
@@ -281,34 +278,6 @@ export default function ProjectDetails() {
               {author_bio && (
                 <p className="text-sm text-gray-500 leading-relaxed">{author_bio}</p>
               )}
-
-              {/* Social links */}
-              <div className="flex flex-wrap gap-2">
-                {author_github && (
-                  <a
-                    href={author_github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                      border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <Github className="w-3.5 h-3.5" />
-                    GitHub
-                  </a>
-                )}
-                {author_website && (
-                  <a
-                    href={author_website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                      border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Website
-                  </a>
-                )}
-              </div>
 
               {author_username && (
                 <Link

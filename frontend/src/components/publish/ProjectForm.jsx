@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { X, Upload, Loader2, Plus, Search } from 'lucide-react'
+import { X, Upload, Loader2, Plus } from 'lucide-react'
 import ThumbnailUpload from './ThumbnailUpload'
 import uploadService from '../../services/uploadService'
 import { CATEGORIES, POPULAR_TECHNOLOGIES } from '../../utils/constants'
@@ -34,9 +34,10 @@ export default function ProjectForm({
   const [customCatInput, setCustomCatInput] = useState('')
   const [showOtherCat, setShowOtherCat]     = useState(false)
 
-  // Technology search/add state
-  const [techSearch, setTechSearch] = useState('')
+  // Technology multi-select state
+  const [showOtherTech, setShowOtherTech]     = useState(false)
   const [customTechInput, setCustomTechInput] = useState('')
+  const [techSearch, setTechSearch]           = useState('')  // kept for canonical addTech helper
 
   const [screenshotUploading, setScreenshotUploading] = useState(false)
   const screenshotRef = useRef(null)
@@ -61,14 +62,6 @@ export default function ProjectForm({
   }
 
   // ── Technology multi-select ───────────────────────────────────────────────
-  // Filter suggestions: predefined techs matching search, not already added
-  const techSuggestions = SORTED_TECHNOLOGIES.filter(
-    (t) =>
-      techSearch.trim() &&
-      t.toLowerCase().includes(techSearch.trim().toLowerCase()) &&
-      !(form.technologies || []).some((x) => x.toLowerCase() === t.toLowerCase())
-  )
-
   const addTech = (tech) => {
     const trimmed = tech.trim()
     if (!trimmed) return
@@ -92,17 +85,6 @@ export default function ProjectForm({
       ...f,
       technologies: f.technologies.filter((t) => t !== tech),
     }))
-  }
-
-  const handleTechSearchKey = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (techSuggestions.length > 0) {
-        addTech(techSuggestions[0])
-      } else if (techSearch.trim()) {
-        addTech(techSearch)
-      }
-    }
   }
 
   // ── Screenshots ───────────────────────────────────────────────────────────
@@ -191,43 +173,67 @@ export default function ProjectForm({
         {errors.description && <p className="field-error text-xs text-red-500 mt-1">{errors.description}</p>}
       </div>
 
-      {/* ── Category — native select + custom Other input ── */}
+      {/* ── Category — scrollable list, Other reveals input ── */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Category <span className="text-red-400">*</span>
         </label>
 
-        <select
-          name="category"
-          value={CATEGORIES.includes(form.category) ? form.category : (hasCustomCategory ? '__custom__' : '')}
-          onChange={(e) => {
-            if (e.target.value === '__custom__') {
-              setShowOtherCat(true)
-              return
-            }
-            setShowOtherCat(false)
-            setCustomCatInput('')
-            setForm((f) => ({ ...f, category: e.target.value }))
-            setErrors((er) => ({ ...er, category: '' }))
-          }}
-          className={`input-base ${errors.category ? 'border-red-300 focus:ring-red-400' : ''}`}
+        {/* Scrollable list box */}
+        <div
+          className={`border rounded-xl bg-white overflow-y-auto ${
+            errors.category ? 'border-red-300' : 'border-gray-200'
+          }`}
+          style={{ maxHeight: 220 }}
         >
-          <option value="">Select a category…</option>
           {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
+            <button
+              key={cat}
+              type="button"
+              onClick={() => {
+                setShowOtherCat(false)
+                setCustomCatInput('')
+                setForm((f) => ({ ...f, category: cat }))
+                setErrors((er) => ({ ...er, category: '' }))
+              }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors border-b border-gray-50 last:border-0 ${
+                form.category === cat && !hasCustomCategory
+                  ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold'
+                  : 'text-gray-700 hover:bg-primary-50 hover:text-primary-700'
+              }`}
+            >
+              {cat}
+            </button>
           ))}
-          <option value="__custom__">Other — type below</option>
-        </select>
 
-        {/* Custom category text input — only when Other is chosen or custom value exists */}
+          {/* Other — always last */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowOtherCat(true)
+              setForm((f) => ({ ...f, category: '' }))
+              setErrors((er) => ({ ...er, category: '' }))
+            }}
+            className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+              showOtherCat || hasCustomCategory
+                ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold'
+                : 'text-gray-700 hover:bg-primary-50 hover:text-primary-700'
+            }`}
+          >
+            Other
+          </button>
+        </div>
+
+        {/* Custom input — ONLY when Other is selected */}
         {(showOtherCat || hasCustomCategory) && (
           <div className="mt-2 flex gap-2">
             <input
               type="text"
-              value={customCatInput || (hasCustomCategory && !customCatInput ? form.category : customCatInput)}
+              value={customCatInput || (hasCustomCategory ? form.category : '')}
               onChange={(e) => setCustomCatInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCustomCat() } }}
               placeholder="e.g. DevOps, Blockchain…"
+              autoFocus
               className="flex-1 input-base text-sm"
             />
             <button
@@ -243,15 +249,20 @@ export default function ProjectForm({
           </div>
         )}
 
+        {/* Show applied custom value as chip */}
         {hasCustomCategory && (
           <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-xs text-gray-500">Custom category:</span>
-            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent-100 text-accent-700">
+            <span className="text-xs text-gray-500">Custom:</span>
+            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs
+              font-semibold bg-accent-100 text-accent-700">
               {form.category}
               <button
                 type="button"
-                onClick={() => { setForm((f) => ({ ...f, category: '' })); setCustomCatInput('') }}
-                className="hover:text-accent-900"
+                onClick={() => {
+                  setForm((f) => ({ ...f, category: '' }))
+                  setCustomCatInput('')
+                  setShowOtherCat(false)
+                }}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -262,49 +273,88 @@ export default function ProjectForm({
         {errors.category && <p className="field-error text-xs text-red-500 mt-1">{errors.category}</p>}
       </div>
 
-      {/* ── Technologies — searchable type-to-filter + tag chips + Other ── */}
+      {/* ── Technologies — scrollable multi-select list, Other reveals input ── */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Technologies
-          <span className="text-gray-400 font-normal ml-1">(add all that apply)</span>
+          <span className="text-gray-400 font-normal ml-1">(select all that apply)</span>
         </label>
 
-        {/* Search / type-to-add input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            value={techSearch}
-            onChange={(e) => setTechSearch(e.target.value)}
-            onKeyDown={handleTechSearchKey}
-            placeholder="Search or type a technology and press Enter…"
-            className="input-base pl-10"
-            autoComplete="off"
-          />
+        {/* Scrollable list box */}
+        <div
+          className="border border-gray-200 rounded-xl bg-white overflow-y-auto"
+          style={{ maxHeight: 240 }}
+        >
+          {SORTED_TECHNOLOGIES.map((tech) => {
+            const isSelected = (form.technologies || []).some(
+              (t) => t.toLowerCase() === tech.toLowerCase()
+            )
+            return (
+              <button
+                key={tech}
+                type="button"
+                onClick={() => {
+                  if (isSelected) {
+                    removeTech(tech)
+                  } else {
+                    setForm((f) => ({ ...f, technologies: [...(f.technologies || []), tech] }))
+                  }
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors
+                  border-b border-gray-50 last:border-0 flex items-center justify-between ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold'
+                    : 'text-gray-700 hover:bg-primary-50 hover:text-primary-700'
+                }`}
+              >
+                <span>{tech}</span>
+                {isSelected && <X className="w-3.5 h-3.5 opacity-80 flex-shrink-0" />}
+              </button>
+            )
+          })}
+
+          {/* Other — always last */}
+          <button
+            type="button"
+            onClick={() => setShowOtherTech((v) => !v)}
+            className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+              showOtherTech
+                ? 'bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold'
+                : 'text-gray-700 hover:bg-primary-50 hover:text-primary-700'
+            }`}
+          >
+            Other
+          </button>
         </div>
 
-        {/* Dropdown suggestions */}
-        {techSuggestions.length > 0 && (
-          <div className="mt-1 border border-gray-200 rounded-xl bg-white shadow-card overflow-hidden">
-            {techSuggestions.slice(0, 6).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => addTech(t)}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-primary-50
-                  hover:text-primary-700 transition-colors"
-              >
-                {t}
-              </button>
-            ))}
+        {/* Custom tech input — ONLY when Other is selected */}
+        {showOtherTech && (
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              value={customTechInput}
+              onChange={(e) => setCustomTechInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addCustomTech() }
+              }}
+              placeholder="e.g. Elixir, SolidJS…"
+              autoFocus
+              className="flex-1 input-base text-sm"
+            />
+            <button
+              type="button"
+              onClick={addCustomTech}
+              disabled={!customTechInput.trim()}
+              className="px-4 py-2 rounded-xl text-xs font-semibold
+                bg-gradient-to-r from-primary-500 to-accent-500 text-white
+                disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add
+            </button>
           </div>
         )}
 
-        <p className="text-xs text-gray-400 mt-1">
-          Type to search predefined techs, or press Enter to add a custom one.
-        </p>
-
-        {/* Selected tag chips */}
+        {/* Selected chips — shown below the list */}
         {(form.technologies || []).length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {(form.technologies || []).map((tech) => (
@@ -321,33 +371,6 @@ export default function ProjectForm({
             ))}
           </div>
         )}
-
-        {/* Other: free-text for technologies not in the predefined list */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500 mb-1.5">Not in the list? Add a custom technology:</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={customTechInput}
-              onChange={(e) => setCustomTechInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addCustomTech() }
-              }}
-              placeholder="e.g. Elixir, SolidJS…"
-              className="flex-1 input-base text-sm"
-            />
-            <button
-              type="button"
-              onClick={addCustomTech}
-              disabled={!customTechInput.trim()}
-              className="px-4 py-2 rounded-xl text-xs font-semibold
-                bg-gradient-to-r from-primary-500 to-accent-500 text-white
-                disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Live demo URL */}

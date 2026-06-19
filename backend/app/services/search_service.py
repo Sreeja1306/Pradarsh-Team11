@@ -216,7 +216,9 @@ class SearchService:
                 )
 
                 if real_techs and want_other_tech:
-                    return predefined_match or other_match
+                    # AND logic: project must satisfy ALL predefined selections
+                    # AND also have at least one non-predefined technology
+                    return predefined_match and other_match
                 if real_techs:
                     return predefined_match
                 return other_match

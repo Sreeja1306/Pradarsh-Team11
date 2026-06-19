@@ -39,8 +39,13 @@ async def update_my_profile(
 
 @router.get("/profile/{username}")
 async def get_public_profile(username: str):
-    """Get a developer's public profile by username."""
+    """Get a developer's public profile by username or user UUID."""
     profile = auth_service.get_profile_by_username(username)
+
+    # Fallback: if not found by username, try looking up by UUID
+    # (used when a user has no username set yet — navbar links to /developer/{uuid})
+    if not profile:
+        profile = auth_service.get_profile(username)
 
     if not profile:
         raise HTTPException(
